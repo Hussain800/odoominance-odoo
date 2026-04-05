@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="dm_food_safety_template_restaurant" model="dm.food.checklist.template">
+            <field name="name">Restaurant Food Safety Checklist</field>
+            <field name="code">restaurant_basic</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_1" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">10</field>
+            <field name="name">Handwashing station stocked</field>
+            <field name="check_type">boolean</field>
+            <field name="severity">critical</field>
+            <field name="weight">1</field>
+            <field name="expected_boolean">yes</field>
+            <field name="requires_evidence">1</field>
+            <field name="note">Soap, water, and disposable towels must be available.</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_2" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">20</field>
+            <field name="name">Cold storage temperature within range</field>
+            <field name="check_type">numeric</field>
+            <field name="severity">critical</field>
+            <field name="weight">2</field>
+            <field name="minimum_value">0</field>
+            <field name="maximum_value">5</field>
+            <field name="requires_evidence">1</field>
+            <field name="note">Chillers and refrigerators must stay between 0 and 5 degrees Celsius.</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_3" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">30</field>
+            <field name="name">Food contact surfaces sanitized</field>
+            <field name="check_type">boolean</field>
+            <field name="severity">high</field>
+            <field name="weight">1</field>
+            <field name="expected_boolean">yes</field>
+            <field name="note">Worktops, prep tables, and service counters should be sanitized.</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_4" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">40</field>
+            <field name="name">Waste containers covered and emptied</field>
+            <field name="check_type">boolean</field>
+            <field name="severity">medium</field>
+            <field name="weight">1</field>
+            <field name="expected_boolean">yes</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_5" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">50</field>
+            <field name="name">Pest control log available</field>
+            <field name="check_type">boolean</field>
+            <field name="severity">high</field>
+            <field name="weight">1</field>
+            <field name="expected_boolean">yes</field>
+            <field name="requires_evidence">1</field>
+            <field name="note">A current pest-control log or service certificate is required.</field>
+        </record>
+
+        <record id="dm_food_safety_template_restaurant_line_6" model="dm.food.checklist.template.line">
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="sequence">60</field>
+            <field name="name">Staff briefing recorded in log</field>
+            <field name="check_type">text</field>
+            <field name="severity">low</field>
+            <field name="weight">1</field>
+            <field name="expected_text">briefing</field>
+            <field name="note">The inspector should record the staff briefing note in plain text.</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="dm_food_safety_demo_restaurant_1" model="res.partner">
+            <field name="name">Palm Harbor Grill</field>
+            <field name="is_company">1</field>
+            <field name="street">12 Marina Walk</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">info@palmharbor.example</field>
+            <field name="phone">+971 4 555 0101</field>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_2" model="res.partner">
+            <field name="name">Desert Dunes Kitchen</field>
+            <field name="is_company">1</field>
+            <field name="street">88 Sheikh Zayed Road</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">contact@desertdunes.example</field>
+            <field name="phone">+971 4 555 0102</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_pass" model="dm.food.inspection">
+            <field name="name">FSI/2026/0001</field>
+            <field name="inspection_date">2026-04-05 09:00:00</field>
+            <field name="due_date">2026-04-06</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_passed"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_1"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="note">All key food safety controls were verified during the visit.</field>
+            <field name="line_ids" eval="[
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_1'),
+                    'sequence': 10,
+                    'name': 'Handwashing station stocked',
+                    'check_type': 'boolean',
+                    'severity': 'critical',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes',
+                    'requires_evidence': True,
+                    'evidence_note': 'Soap, water, and disposable towels were available.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_2'),
+                    'sequence': 20,
+                    'name': 'Cold storage temperature within range',
+                    'check_type': 'numeric',
+                    'severity': 'critical',
+                    'weight': 2,
+                    'minimum_value': 0,
+                    'maximum_value': 5,
+                    'actual_value': 4.0,
+                    'requires_evidence': True,
+                    'evidence_note': 'Chiller logs were within range.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_3'),
+                    'sequence': 30,
+                    'name': 'Food contact surfaces sanitized',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_4'),
+                    'sequence': 40,
+                    'name': 'Waste containers covered and emptied',
+                    'check_type': 'boolean',
+                    'severity': 'medium',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_5'),
+                    'sequence': 50,
+                    'name': 'Pest control log available',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes',
+                    'requires_evidence': True,
+                    'evidence_note': 'Current pest control certificate attached.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_6'),
+                    'sequence': 60,
+                    'name': 'Staff briefing recorded in log',
+                    'check_type': 'text',
+                    'severity': 'low',
+                    'weight': 1,
+                    'expected_text': 'briefing',
+                    'actual_text': 'Staff briefing recorded in the inspection log.'
+                })
+            ]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_fail" model="dm.food.inspection">
+            <field name="name">FSI/2026/0002</field>
+            <field name="inspection_date">2026-04-05 14:30:00</field>
+            <field name="due_date">2026-04-05</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_failed"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_2"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="follow_up_note">Immediate corrective action required for the cold room and handwashing area.</field>
+            <field name="line_ids" eval="[
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_1'),
+                    'sequence': 10,
+                    'name': 'Handwashing station stocked',
+                    'check_type': 'boolean',
+                    'severity': 'critical',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'no',
+                    'requires_evidence': True,
+                    'evidence_note': 'Soap dispenser was empty and no disposable towels were available.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_2'),
+                    'sequence': 20,
+                    'name': 'Cold storage temperature within range',
+                    'check_type': 'numeric',
+                    'severity': 'critical',
+                    'weight': 2,
+                    'minimum_value': 0,
+                    'maximum_value': 5,
+                    'actual_value': 8.5,
+                    'requires_evidence': True,
+                    'evidence_note': 'The cold room thermometer read 8.5C at the time of inspection.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_3'),
+                    'sequence': 30,
+                    'name': 'Food contact surfaces sanitized',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_4'),
+                    'sequence': 40,
+                    'name': 'Waste containers covered and emptied',
+                    'check_type': 'boolean',
+                    'severity': 'medium',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_5'),
+                    'sequence': 50,
+                    'name': 'Pest control log available',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'no',
+                    'requires_evidence': True,
+                    'evidence_note': 'No current pest control certificate was presented.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_6'),
+                    'sequence': 60,
+                    'name': 'Staff briefing recorded in log',
+                    'check_type': 'text',
+                    'severity': 'low',
+                    'weight': 1,
+                    'expected_text': 'briefing',
+                    'actual_text': 'No staff briefing recorded.'
+                })
+            ]"/>
+        </record>
+    </data>
+</odoo>

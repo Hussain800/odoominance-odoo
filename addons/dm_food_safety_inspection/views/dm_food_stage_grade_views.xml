@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_dm_food_stage_search" model="ir.ui.view">
+            <field name="name">dm.food.inspection.stage.search</field>
+            <field name="model">dm.food.inspection.stage</field>
+            <field name="arch" type="xml">
+                <search string="Inspection Stages">
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="company_id"/>
+                    <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                    <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                    <group>
+                        <filter string="Done" name="group_done" context="{'group_by': 'done'}"/>
+                        <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_dm_food_stage_list" model="ir.ui.view">
+            <field name="name">dm.food.inspection.stage.list</field>
+            <field name="model">dm.food.inspection.stage</field>
+            <field name="arch" type="xml">
+                <list string="Inspection Stages" sample="1" default_order="sequence, id">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="requires_supervisor"/>
+                    <field name="fold"/>
+                    <field name="done"/>
+                    <field name="color"/>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_dm_food_stage_form" model="ir.ui.view">
+            <field name="name">dm.food.inspection.stage.form</field>
+            <field name="model">dm.food.inspection.stage</field>
+            <field name="arch" type="xml">
+                <form string="Inspection Stage">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="code"/>
+                                <field name="sequence"/>
+                                <field name="color"/>
+                            </group>
+                            <group>
+                                <field name="requires_supervisor"/>
+                                <field name="fold"/>
+                                <field name="done"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                                <field name="active"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dm_food_stage" model="ir.actions.act_window">
+            <field name="name">Inspection Stages</field>
+            <field name="res_model">dm.food.inspection.stage</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_dm_food_stage_search"/>
+            <field name="path">food-safety-stages</field>
+        </record>
+
+        <record id="view_dm_food_grade_search" model="ir.ui.view">
+            <field name="name">dm.food.inspection.grade.search</field>
+            <field name="model">dm.food.inspection.grade</field>
+            <field name="arch" type="xml">
+                <search string="Inspection Grades">
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="company_id"/>
+                    <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                    <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                    <group>
+                        <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_dm_food_grade_list" model="ir.ui.view">
+            <field name="name">dm.food.inspection.grade.list</field>
+            <field name="model">dm.food.inspection.grade</field>
+            <field name="arch" type="xml">
+                <list string="Inspection Grades" sample="1" default_order="sequence, min_compliance desc">
+                    <field name="sequence" widget="handle"/>
+                    <field name="code"/>
+                    <field name="name"/>
+                    <field name="min_compliance"/>
+                    <field name="max_compliance"/>
+                    <field name="color"/>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_dm_food_grade_form" model="ir.ui.view">
+            <field name="name">dm.food.inspection.grade.form</field>
+            <field name="model">dm.food.inspection.grade</field>
+            <field name="arch" type="xml">
+                <form string="Inspection Grade">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="code"/>
+                                <field name="sequence"/>
+                                <field name="color"/>
+                            </group>
+                            <group>
+                                <field name="min_compliance"/>
+                                <field name="max_compliance"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                                <field name="active"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dm_food_grade" model="ir.actions.act_window">
+            <field name="name">Inspection Grades</field>
+            <field name="res_model">dm.food.inspection.grade</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_dm_food_grade_search"/>
+            <field name="path">food-safety-grades</field>
+        </record>
+
+        <menuitem id="menu_dm_food_safety_stages" name="Workflow Stages"
+            parent="menu_dm_food_safety_config" action="action_dm_food_stage" sequence="20"
+            groups="dm_food_safety_inspection.group_food_safety_supervisor"/>
+
+        <menuitem id="menu_dm_food_safety_grades" name="Compliance Grades"
+            parent="menu_dm_food_safety_config" action="action_dm_food_grade" sequence="30"
+            groups="dm_food_safety_inspection.group_food_safety_supervisor"/>
+    </data>
+</odoo>

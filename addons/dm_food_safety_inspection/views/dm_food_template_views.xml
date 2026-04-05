@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_dm_food_template_search" model="ir.ui.view">
+            <field name="name">dm.food.checklist.template.search</field>
+            <field name="model">dm.food.checklist.template</field>
+            <field name="arch" type="xml">
+                <search string="Checklist Templates">
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="company_id"/>
+                    <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                    <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                    <group>
+                        <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_dm_food_template_list" model="ir.ui.view">
+            <field name="name">dm.food.checklist.template.list</field>
+            <field name="model">dm.food.checklist.template</field>
+            <field name="arch" type="xml">
+                <list string="Checklist Templates" sample="1" default_order="sequence, name">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="line_count"/>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_dm_food_template_form" model="ir.ui.view">
+            <field name="name">dm.food.checklist.template.form</field>
+            <field name="model">dm.food.checklist.template</field>
+            <field name="arch" type="xml">
+                <form string="Checklist Template">
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1><field name="name"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="code"/>
+                                <field name="sequence"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                            </group>
+                            <group>
+                                <field name="active"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Checklist Lines">
+                                <field name="line_ids" mode="list,form" context="{'default_template_id': id}">
+                                    <list editable="bottom" decoration-muted="not active">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="name"/>
+                                        <field name="check_type"/>
+                                        <field name="severity"/>
+                                        <field name="weight"/>
+                                        <field name="expected_boolean"/>
+                                        <field name="expected_text" optional="hide"/>
+                                        <field name="minimum_value" optional="hide"/>
+                                        <field name="maximum_value" optional="hide"/>
+                                        <field name="requires_evidence"/>
+                                        <field name="note" optional="hide"/>
+                                        <field name="active"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page string="Notes">
+                                <field name="note"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dm_food_template" model="ir.actions.act_window">
+            <field name="name">Checklist Templates</field>
+            <field name="res_model">dm.food.checklist.template</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_dm_food_template_search"/>
+            <field name="path">food-safety-templates</field>
+        </record>
+
+        <menuitem id="menu_dm_food_safety_templates" name="Checklist Templates"
+            parent="menu_dm_food_safety_config" action="action_dm_food_template" sequence="10"
+            groups="dm_food_safety_inspection.group_food_safety_supervisor"/>
+    </data>
+</odoo>

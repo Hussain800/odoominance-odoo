@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_dm_food_inspection_search" model="ir.ui.view">
+            <field name="name">dm.food.inspection.search</field>
+            <field name="model">dm.food.inspection</field>
+            <field name="arch" type="xml">
+                <search string="Food Safety Inspections">
+                    <field name="name"/>
+                    <field name="establishment_id"/>
+                    <field name="inspector_id"/>
+                    <field name="supervisor_id"/>
+                    <field name="template_id"/>
+                    <field name="stage_id"/>
+                    <field name="grade_id"/>
+                    <separator/>
+                    <filter string="My Inspections" name="my_inspections" domain="[('inspector_id', '=', uid)]"/>
+                    <filter string="To Review" name="to_review" domain="[('stage_id.code', '=', 'waiting_supervisor')]"/>
+                    <filter string="Overdue" name="overdue" domain="[('is_overdue', '=', True)]"/>
+                    <filter string="Critical Risk" name="critical_risk" domain="[('risk_band', '=', 'critical')]"/>
+                    <filter string="High Risk" name="high_risk" domain="[('risk_band', 'in', ['high', 'critical'])]"/>
+                    <filter string="Passed" name="passed" domain="[('stage_id.code', '=', 'passed')]"/>
+                    <filter string="Failed" name="failed" domain="[('stage_id.code', '=', 'failed')]"/>
+                    <filter string="Cancelled" name="cancelled" domain="[('stage_id.code', '=', 'cancelled')]"/>
+                    <separator/>
+                    <filter name="filter_date" date="inspection_date"/>
+                    <group>
+                        <filter string="Stage" name="group_stage" context="{'group_by': 'stage_id'}"/>
+                        <filter string="Inspector" name="group_inspector" context="{'group_by': 'inspector_id'}"/>
+                        <filter string="Establishment" name="group_establishment" context="{'group_by': 'establishment_id'}"/>
+                        <filter string="Grade" name="group_grade" context="{'group_by': 'grade_id'}"/>
+                        <filter string="Risk Band" name="group_risk_band" context="{'group_by': 'risk_band'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_dm_food_inspection_list" model="ir.ui.view">
+            <field name="name">dm.food.inspection.list</field>
+            <field name="model">dm.food.inspection</field>
+            <field name="arch" type="xml">
+                <list string="Food Safety Inspections" multi_edit="1" default_order="inspection_date desc" sample="1"
+                      decoration-danger="risk_score &gt;= 70 or critical_fail_count &gt; 0"
+                      decoration-warning="risk_score &gt;= 40 and risk_score &lt; 70"
+                      decoration-success="stage_id.code == 'passed'"
+                      decoration-muted="stage_id.code == 'cancelled'">
+                    <field name="color" column_invisible="1"/>
+                    <field name="name"/>
+                    <field name="inspection_date"/>
+                    <field name="establishment_id"/>
+                    <field name="template_id" optional="hide"/>
+                    <field name="inspector_id"/>
+                    <field name="stage_id"/>
+                    <field name="compliance_score" widget="progressbar"/>
+                    <field name="risk_score"/>
+                    <field name="risk_band" optional="hide"/>
+                    <field name="grade_id"/>
+                    <field name="due_date" optional="hide"/>
+                    <field name="pending_line_count" optional="hide"/>
+                    <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_dm_food_inspection_kanban" model="ir.ui.view">
+            <field name="name">dm.food.inspection.kanban</field>
+            <field name="model">dm.food.inspection</field>
+            <field name="arch" type="xml">
+                <kanban default_group_by="stage_id" highlight_color="color" sample="1">
+                    <field name="color"/>
+                    <field name="name"/>
+                    <field name="inspection_date"/>
+                    <field name="establishment_id"/>
+                    <field name="inspector_id"/>
+                    <field name="stage_id"/>
+                    <field name="risk_band"/>
+                    <field name="risk_score"/>
+                    <field name="compliance_score"/>
+                    <field name="grade_id"/>
+                    <field name="due_date"/>
+                    <templates>
+                        <t t-name="card" class="o_kanban_record">
+                            <div class="o_kanban_record_top d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-bold">
+                                        <field name="name"/>
+                                    </div>
+                                    <div class="text-muted">
+                                        <field name="inspection_date"/>
+                                    </div>
+                                </div>
+                                <field name="grade_id"/>
+                            </div>
+                            <div class="mt-2">
+                                <div><field name="establishment_id"/></div>
+                                <div><field name="inspector_id" widget="many2one_avatar_user"/></div>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Compliance:</strong>
+                                <field name="compliance_score"/>%
+                            </div>
+                            <div class="mt-2 d-flex flex-wrap gap-1">
+                                <span class="badge text-bg-secondary">
+                                    <field name="risk_band"/>
+                                </span>
+                                <span class="badge text-bg-light">
+                                    <field name="risk_score"/> risk
+                                </span>
+                                <span class="badge text-bg-warning" t-if="record.due_date.raw_value">
+                                    Due <field name="due_date"/>
+                                </span>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <record id="view_dm_food_inspection_form" model="ir.ui.view">
+            <field name="name">dm.food.inspection.form</field>
+            <field name="model">dm.food.inspection</field>
+            <field name="arch" type="xml">
+                <form string="Food Safety Inspection">
+                    <header>
+                        <button name="action_prepare" type="object" string="Prepare" class="btn-primary"
+                            invisible="stage_id.code != 'draft'"/>
+                        <button name="action_start" type="object" string="Start" class="btn-primary"
+                            invisible="stage_id.code != 'ready'"/>
+                        <button name="action_submit_for_review" type="object" string="Submit for Review" class="btn-primary"
+                            invisible="stage_id.code != 'in_progress'"/>
+                        <button name="action_mark_passed" type="object" string="Approve" class="btn-primary"
+                            groups="dm_food_safety_inspection.group_food_safety_supervisor,dm_food_safety_inspection.group_food_safety_manager"
+                            invisible="stage_id.code != 'waiting_supervisor'"/>
+                        <button name="action_mark_failed" type="object" string="Fail" class="btn-secondary"
+                            groups="dm_food_safety_inspection.group_food_safety_supervisor,dm_food_safety_inspection.group_food_safety_manager"
+                            invisible="stage_id.code != 'waiting_supervisor'"/>
+                        <button name="action_cancel" type="object" string="Cancel" class="btn-secondary"
+                            invisible="stage_id.code in ['passed', 'failed', 'cancelled']"/>
+                        <button name="action_reset_draft" type="object" string="Reset to Draft" class="btn-secondary"
+                            invisible="stage_id.code != 'cancelled'"/>
+                        <field name="stage_id" widget="statusbar"
+                            statusbar_visible="draft,ready,in_progress,waiting_supervisor,passed,failed,cancelled"
+                            readonly="1"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1><field name="name" placeholder="FSI/2026/0001" readonly="1"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="template_id" options="{'no_create': True}"/>
+                                <field name="establishment_id"/>
+                                <field name="inspector_id" widget="many2one_avatar_user"/>
+                                <field name="supervisor_id" widget="many2one_avatar_user"/>
+                            </group>
+                            <group>
+                                <field name="inspection_date"/>
+                                <field name="due_date"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                                <field name="risk_band" widget="badge" readonly="1"/>
+                                <field name="grade_id" readonly="1"/>
+                                <field name="risk_score" readonly="1"/>
+                                <field name="compliance_score" readonly="1"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Checklist">
+                                <field name="line_ids" mode="list,form" context="{'default_inspection_id': id}">
+                                    <list editable="bottom" decoration-danger="result == 'fail'" decoration-warning="result == 'pending'" decoration-success="result == 'pass'">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="template_line_id" optional="hide"/>
+                                        <field name="name"/>
+                                        <field name="check_type"/>
+                                        <field name="severity"/>
+                                        <field name="weight"/>
+                                        <field name="expected_boolean" optional="hide"/>
+                                        <field name="expected_text" optional="hide"/>
+                                        <field name="minimum_value" optional="hide"/>
+                                        <field name="maximum_value" optional="hide"/>
+                                        <field name="requires_evidence" optional="hide"/>
+                                        <field name="actual_boolean"/>
+                                        <field name="actual_value"/>
+                                        <field name="actual_text" optional="hide"/>
+                                        <field name="evidence_note" optional="hide"/>
+                                        <field name="result" widget="badge" readonly="1"/>
+                                        <field name="line_score" readonly="1"/>
+                                        <field name="line_max_score" readonly="1"/>
+                                        <field name="critical_failure" readonly="1"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page string="Follow-up">
+                                <group>
+                                    <field name="note" placeholder="Inspector notes"/>
+                                    <field name="follow_up_note" placeholder="Corrective actions and supervisor remarks"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dm_food_inspection" model="ir.actions.act_window">
+            <field name="name">Food Safety Inspections</field>
+            <field name="res_model">dm.food.inspection</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="search_view_id" ref="view_dm_food_inspection_search"/>
+            <field name="context">{'search_default_my_inspections': 1}</field>
+            <field name="path">food-safety-inspections</field>
+        </record>
+
+        <menuitem id="menu_dm_food_safety_root" name="Food Safety" sequence="10"
+            action="action_dm_food_inspection"
+            groups="dm_food_safety_inspection.group_food_safety_inspector"/>
+        <menuitem id="menu_dm_food_safety_config" name="Configuration" parent="menu_dm_food_safety_root" sequence="90"
+            groups="dm_food_safety_inspection.group_food_safety_supervisor"/>
+    </data>
+</odoo>
