@@ -47,6 +47,7 @@ class FoodSafetyInspectionLine(models.Model):
     minimum_value = fields.Float()
     maximum_value = fields.Float()
     requires_evidence = fields.Boolean()
+    note = fields.Html()
     actual_boolean = fields.Selection([('yes', 'Yes'), ('no', 'No')])
     actual_value = fields.Float()
     actual_text = fields.Char()

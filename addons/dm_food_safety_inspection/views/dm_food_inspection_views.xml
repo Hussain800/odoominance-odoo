@@ -179,6 +179,7 @@
                                         <field name="minimum_value" optional="hide"/>
                                         <field name="maximum_value" optional="hide"/>
                                         <field name="requires_evidence" optional="hide"/>
+                                        <field name="note" optional="hide"/>
                                         <field name="actual_boolean"/>
                                         <field name="actual_value"/>
                                         <field name="actual_text" optional="hide"/>
