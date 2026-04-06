@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -9,10 +9,26 @@ export class FoodSafetyDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.actionElement = null;
+        this.delegateScrollClassAdded = false;
         this.state = useState({
             loading: true,
             error: null,
             data: null,
+        });
+
+        onMounted(() => {
+            this.actionElement = this.el?.closest(".o_action");
+            if (this.actionElement && !this.actionElement.classList.contains("o_action_delegate_scroll")) {
+                this.actionElement.classList.add("o_action_delegate_scroll");
+                this.delegateScrollClassAdded = true;
+            }
+        });
+
+        onWillUnmount(() => {
+            if (this.delegateScrollClassAdded) {
+                this.actionElement?.classList.remove("o_action_delegate_scroll");
+            }
         });
 
         onWillStart(async () => {
