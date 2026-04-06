@@ -566,13 +566,13 @@ class FoodSafetyInspection(models.Model):
             'source': 'fallback',
         }
 
-    def _request_openai_summary(self):
+    def _request_groq_summary(self):
         self.ensure_one()
-        api_key = os.environ.get('OPENAI_API_KEY')
+        api_key = os.environ.get('GROQ_API_KEY')
         if not api_key:
             return None
 
-        model = os.environ.get('OPENAI_MODEL', 'gpt-5.4-mini')
+        model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
         context = self._build_ai_summary_context()
         prompt = _(
             'Return one JSON object with the keys title, summary, priority, top_findings, and recommended_actions. '
@@ -585,15 +585,20 @@ class FoodSafetyInspection(models.Model):
                 {'role': 'system', 'content': prompt + ' JSON only.'},
                 {'role': 'user', 'content': json.dumps(context, ensure_ascii=False)},
             ],
-            'response_format': {'type': 'json_object'},
             'temperature': 0.2,
         }
         request = urllib_request.Request(
-            'https://api.openai.com/v1/chat/completions',
+            'https://api.groq.com/openai/v1/chat/completions',
             data=json.dumps(payload).encode('utf-8'),
             headers={
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': os.environ.get(
+                    'GROQ_USER_AGENT',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                    '(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                ),
             },
             method='POST',
         )
@@ -613,25 +618,59 @@ class FoodSafetyInspection(models.Model):
         if not content:
             return None
 
-        try:
-            data = json.loads(content)
-        except json.JSONDecodeError:
+        data = self._extract_ai_summary_json(content)
+        if data is None:
             return None
         return self._sanitize_ai_summary_payload(data)
 
+    def _extract_ai_summary_json(self, content):
+        content = (content or '').strip()
+        if not content:
+            return None
+
+        if content.startswith('```'):
+            lines = content.splitlines()
+            if lines and lines[0].startswith('```'):
+                lines = lines[1:]
+            if lines and lines[-1].strip().startswith('```'):
+                lines = lines[:-1]
+            content = '\n'.join(lines).strip()
+
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            start = content.find('{')
+            end = content.rfind('}')
+            if start == -1 or end == -1 or end <= start:
+                return None
+            try:
+                return json.loads(content[start:end + 1])
+            except json.JSONDecodeError:
+                return None
+
+    def _coerce_ai_summary_items(self, value):
+        if not value:
+            return []
+        if isinstance(value, (list, tuple)):
+            return [str(item) for item in value][:5]
+        return [str(value)]
+
     def _sanitize_ai_summary_payload(self, data):
         self.ensure_one()
-        title = data.get('title') or _('Advisory summary for %(name)s') % {'name': self.name}
-        summary = data.get('summary') or self._build_fallback_ai_summary()['summary']
+        if not isinstance(data, dict):
+            return self._build_fallback_ai_summary()
+
+        title = str(data.get('title') or _('Advisory summary for %(name)s') % {'name': self.name})
+        summary = str(data.get('summary') or self._build_fallback_ai_summary()['summary'])
         priority = data.get('priority') if data.get('priority') in {'low', 'medium', 'high', 'critical'} else 'medium'
-        top_findings = data.get('top_findings') or []
-        recommended_actions = data.get('recommended_actions') or []
+        top_findings = self._coerce_ai_summary_items(data.get('top_findings'))
+        recommended_actions = self._coerce_ai_summary_items(data.get('recommended_actions'))
         return {
             'title': title,
             'summary': summary,
             'priority': priority,
-            'top_findings': [str(item) for item in top_findings][:5],
-            'recommended_actions': [str(item) for item in recommended_actions][:5],
+            'top_findings': top_findings,
+            'recommended_actions': recommended_actions,
             'source': 'ai',
         }
 
@@ -692,7 +731,7 @@ class FoodSafetyInspection(models.Model):
 
     def _generate_ai_summary_payload(self):
         self.ensure_one()
-        payload = self._request_openai_summary()
+        payload = self._request_groq_summary()
         if payload:
             return payload
         return self._build_fallback_ai_summary()

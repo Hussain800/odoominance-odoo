@@ -8,5 +8,21 @@
             <field name="padding">4</field>
             <field name="company_id" eval="False"/>
         </record>
+
+        <record id="sequence_dm_food_finding" model="ir.sequence">
+            <field name="name">Food Safety Finding</field>
+            <field name="code">dm.food.finding</field>
+            <field name="prefix">FSF/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="sequence_dm_food_certificate" model="ir.sequence">
+            <field name="name">Food Safety Certificate</field>
+            <field name="code">dm.food.certificate</field>
+            <field name="prefix">FSC/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
     </data>
 </odoo>

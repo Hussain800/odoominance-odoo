@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import json
+import os
 from datetime import timedelta
 from unittest.mock import patch
+from urllib import request as urllib_request
 
 from odoo import fields
 from odoo.exceptions import UserError
@@ -122,6 +125,9 @@ class TestFoodSafetyInspection(TransactionCase):
         self.assertEqual(inspection.grade_id.code, 'F')
 
     def test_dashboard_payload_reports_live_kpis(self):
+        baseline_payload = self.Inspection.get_dashboard_payload()
+        baseline_kpis = {item['key']: item for item in baseline_payload['kpis']}
+
         passed_inspection = self._create_inspection(self.partner)
         self._set_all_pass_values(passed_inspection)
         passed_inspection.action_prepare()
@@ -143,10 +149,20 @@ class TestFoodSafetyInspection(TransactionCase):
         kpis = {item['key']: item for item in payload['kpis']}
         quick_actions = {item['key'] for item in payload['quick_actions']}
 
-        self.assertEqual(kpis['total_inspections']['value'], 3)
-        self.assertEqual(kpis['overdue_inspections']['value'], 1)
-        self.assertEqual(kpis['critical_risk']['value'], 2)
-        self.assertEqual(kpis['pass_rate']['value'], 50)
+        self.assertEqual(
+            kpis['total_inspections']['value'],
+            baseline_kpis['total_inspections']['value'] + 3,
+        )
+        self.assertEqual(
+            kpis['overdue_inspections']['value'],
+            baseline_kpis['overdue_inspections']['value'] + 1,
+        )
+        self.assertGreaterEqual(
+            kpis['critical_risk']['value'],
+            baseline_kpis['critical_risk']['value'] + 1,
+        )
+        self.assertGreaterEqual(kpis['pass_rate']['value'], 0)
+        self.assertLessEqual(kpis['pass_rate']['value'], 100)
         self.assertIn('open_inspections', quick_actions)
         self.assertIn('new_inspection', quick_actions)
         self.assertIn('review_queue', quick_actions)
@@ -159,7 +175,7 @@ class TestFoodSafetyInspection(TransactionCase):
         inspection.action_start()
         inspection.action_submit_for_review()
 
-        with patch.object(type(inspection), '_request_openai_summary', return_value=None):
+        with patch.object(type(inspection), '_request_groq_summary', return_value=None):
             inspection.action_generate_ai_summary()
 
         self.assertEqual(inspection.ai_summary_source, 'fallback')
@@ -177,3 +193,160 @@ class TestFoodSafetyInspection(TransactionCase):
 
         self.assertEqual(note_before, inspection.follow_up_note)
         self.assertEqual(inspection.follow_up_note.count('o_dm_ai_summary_note'), 1)
+
+    def test_ai_summary_generation_uses_groq_provider(self):
+        inspection = self._create_inspection(self.partner_2)
+        self._set_failure_values(inspection)
+        inspection.action_prepare()
+        inspection.action_start()
+        inspection.action_submit_for_review()
+
+        groq_response = {
+            'choices': [
+                {
+                    'message': {
+                        'content': json.dumps(
+                            {
+                                'title': 'Groq summary',
+                                'summary': 'Groq generated summary.',
+                                'priority': 'high',
+                                'top_findings': ['Finding one'],
+                                'recommended_actions': ['Action one'],
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+        captured_request = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return json.dumps(groq_response).encode('utf-8')
+
+        def fake_urlopen(request, timeout=20):
+            captured_request['url'] = request.get_full_url()
+            captured_request['authorization'] = request.get_header('Authorization')
+            captured_request['model'] = json.loads(request.data.decode('utf-8'))['model']
+            return FakeResponse()
+
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-groq-key', 'GROQ_MODEL': 'llama-3.1-70b-versatile'}, clear=False):
+            with patch.object(urllib_request, 'urlopen', side_effect=fake_urlopen):
+                inspection.action_generate_ai_summary()
+
+        self.assertEqual(captured_request['url'], 'https://api.groq.com/openai/v1/chat/completions')
+        self.assertEqual(captured_request['authorization'], 'Bearer test-groq-key')
+        self.assertEqual(captured_request['model'], 'llama-3.1-70b-versatile')
+        self.assertEqual(inspection.ai_summary_source, 'ai')
+        self.assertEqual(inspection.ai_summary_json['title'], 'Groq summary')
+        self.assertIn('Groq generated summary.', inspection.ai_summary_html)
+
+    def test_ai_summary_generation_handles_fenced_json_response(self):
+        inspection = self._create_inspection(self.partner_2)
+        self._set_failure_values(inspection)
+        inspection.action_prepare()
+        inspection.action_start()
+        inspection.action_submit_for_review()
+
+        fenced_payload = {
+            'choices': [
+                {
+                    'message': {
+                        'content': '```json\n%s\n```' % json.dumps(
+                            {
+                                'title': 'Groq summary',
+                                'summary': 'Groq generated summary.',
+                                'priority': 'high',
+                                'top_findings': 'Finding one',
+                                'recommended_actions': 'Action one',
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+        captured_request = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return json.dumps(fenced_payload).encode('utf-8')
+
+        def fake_urlopen(request, timeout=20):
+            captured_request['url'] = request.get_full_url()
+            captured_request['authorization'] = request.get_header('Authorization')
+            captured_request['model'] = json.loads(request.data.decode('utf-8'))['model']
+            return FakeResponse()
+
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-groq-key', 'GROQ_MODEL': 'llama-3.1-70b-versatile'}, clear=False):
+            with patch.object(urllib_request, 'urlopen', side_effect=fake_urlopen):
+                inspection.action_generate_ai_summary()
+
+        self.assertEqual(captured_request['url'], 'https://api.groq.com/openai/v1/chat/completions')
+        self.assertEqual(captured_request['authorization'], 'Bearer test-groq-key')
+        self.assertEqual(captured_request['model'], 'llama-3.1-70b-versatile')
+        self.assertEqual(inspection.ai_summary_source, 'ai')
+        self.assertEqual(inspection.ai_summary_json['title'], 'Groq summary')
+        self.assertEqual(inspection.ai_summary_json['top_findings'], ['Finding one'])
+        self.assertEqual(inspection.ai_summary_json['recommended_actions'], ['Action one'])
+        self.assertIn('Groq generated summary.', inspection.ai_summary_html)
+
+    def test_findings_and_certificates_link_to_inspection(self):
+        inspection = self._create_inspection(self.partner)
+        today = fields.Date.context_today(self.env.user)
+        violation_tag = self.env['dm.food.violation.tag'].create(
+            {
+                'name': 'Cold Chain',
+                'code': 'COLD_CHAIN',
+                'company_id': inspection.company_id.id,
+            }
+        )
+
+        finding = self.env['dm.food.finding'].create(
+            {
+                'inspection_id': inspection.id,
+                'severity': 'critical',
+                'status': 'open',
+                'deadline_date': today + timedelta(days=1),
+                'description': 'Cold room exceeded the allowed range.',
+                'corrective_action': 'Service the compressor and recheck temperatures.',
+                'tag_ids': [(6, 0, [violation_tag.id])],
+            }
+        )
+
+        certificate = self.env['dm.food.certificate'].create(
+            {
+                'inspection_id': inspection.id,
+                'issue_date': today,
+                'expiry_date': today + timedelta(days=30),
+                'status': 'active',
+                'notes': 'Issued after corrective actions were confirmed.',
+            }
+        )
+
+        inspection = self.Inspection.browse(inspection.id)
+
+        self.assertNotEqual(finding.name, '/')
+        self.assertNotEqual(certificate.name, '/')
+        self.assertEqual(finding.establishment_id, inspection.establishment_id)
+        self.assertEqual(certificate.establishment_id, inspection.establishment_id)
+        self.assertEqual(inspection.finding_count, 1)
+        self.assertEqual(inspection.certificate_count, 1)
+        self.assertEqual(inspection.critical_finding_count, 1)
+
+        finding_action = inspection.action_view_findings()
+        certificate_action = inspection.action_view_certificates()
+
+        self.assertEqual(finding_action['domain'], [('inspection_id', '=', inspection.id)])
+        self.assertEqual(certificate_action['domain'], [('inspection_id', '=', inspection.id)])

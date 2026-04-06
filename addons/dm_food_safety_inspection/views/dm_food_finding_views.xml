@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_dm_food_finding_search" model="ir.ui.view">
+            <field name="name">dm.food.finding.search</field>
+            <field name="model">dm.food.finding</field>
+            <field name="arch" type="xml">
+                <search string="Food Safety Findings">
+                    <field name="name"/>
+                    <field name="inspection_id"/>
+                    <field name="establishment_id"/>
+                    <field name="severity"/>
+                    <field name="status"/>
+                    <field name="deadline_date"/>
+                    <separator/>
+                    <filter string="Open" name="open" domain="[('status', 'in', ['open', 'in_progress'])]"/>
+                    <filter string="Critical" name="critical" domain="[('severity', '=', 'critical')]"/>
+                    <filter string="Overdue" name="overdue" domain="[('is_overdue', '=', True)]"/>
+                    <group>
+                        <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                        <filter string="Severity" name="group_severity" context="{'group_by': 'severity'}"/>
+                        <filter string="Inspection" name="group_inspection" context="{'group_by': 'inspection_id'}"/>
+                        <filter string="Establishment" name="group_establishment" context="{'group_by': 'establishment_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_dm_food_finding_list" model="ir.ui.view">
+            <field name="name">dm.food.finding.list</field>
+            <field name="model">dm.food.finding</field>
+            <field name="arch" type="xml">
+                <list string="Food Safety Findings" sample="1" default_order="deadline_date asc, id desc"
+                    decoration-danger="severity == 'critical'"
+                    decoration-warning="is_overdue"
+                    decoration-muted="status in ['resolved', 'waived']">
+                    <field name="name"/>
+                    <field name="inspection_id"/>
+                    <field name="establishment_id" optional="hide"/>
+                    <field name="severity" widget="badge"/>
+                    <field name="status" widget="badge"/>
+                    <field name="deadline_date"/>
+                    <field name="is_overdue" optional="hide"/>
+                    <field name="inspector_id" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_dm_food_finding_form" model="ir.ui.view">
+            <field name="name">dm.food.finding.form</field>
+            <field name="model">dm.food.finding</field>
+            <field name="arch" type="xml">
+                <form string="Food Safety Finding">
+                    <header>
+                        <button name="action_mark_in_progress" type="object" string="Start" class="btn-primary"
+                            invisible="status != 'open'"/>
+                        <button name="action_mark_resolved" type="object" string="Resolve" class="btn-primary"
+                            invisible="status not in ['open', 'in_progress']"/>
+                        <button name="action_mark_waived" type="object" string="Waive" class="btn-secondary"
+                            invisible="status in ['resolved', 'waived']"/>
+                        <button name="action_reopen" type="object" string="Reopen" class="btn-secondary"
+                            invisible="status not in ['resolved', 'waived']"/>
+                        <field name="status" widget="statusbar" statusbar_visible="open,in_progress,resolved,waived"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1><field name="name" readonly="1"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="inspection_id" options="{'no_open': False}"/>
+                                <field name="establishment_id" readonly="1"/>
+                                <field name="inspector_id" readonly="1" widget="many2one_avatar_user"/>
+                                <field name="deadline_date"/>
+                            </group>
+                            <group>
+                                <field name="severity"/>
+                                <field name="critical" readonly="1"/>
+                                <field name="is_overdue" readonly="1"/>
+                                <field name="tag_ids" widget="many2many_tags"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Details">
+                                <group>
+                                    <field name="description"/>
+                                    <field name="corrective_action"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_dm_food_finding" model="ir.actions.act_window">
+            <field name="name">Findings</field>
+            <field name="res_model">dm.food.finding</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_dm_food_finding_search"/>
+            <field name="path">food-safety-findings</field>
+        </record>
+
+        <menuitem id="menu_dm_food_safety_findings" name="Findings"
+            parent="menu_dm_food_safety_root" action="action_dm_food_finding" sequence="20"
+            groups="dm_food_safety_inspection.group_food_safety_inspector"/>
+    </data>
+</odoo>

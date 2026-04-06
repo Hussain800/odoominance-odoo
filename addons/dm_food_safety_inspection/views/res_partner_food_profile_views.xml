@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_res_partner_food_safety_search" model="ir.ui.view">
+            <field name="name">res.partner.food.safety.search</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <search string="Food Safety Establishments">
+                    <field name="name"/>
+                    <field name="city"/>
+                    <field name="country_id"/>
+                    <field name="food_trade_license_no"/>
+                    <field name="food_risk_level"/>
+                    <filter string="Companies" name="companies" domain="[('is_company', '=', True)]"/>
+                    <group>
+                        <filter string="Risk Level" name="group_risk_level" context="{'group_by': 'food_risk_level'}"/>
+                        <filter string="City" name="group_city" context="{'group_by': 'city'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="view_res_partner_food_safety_list" model="ir.ui.view">
+            <field name="name">res.partner.food.safety.list</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Establishments" sample="1" default_order="name">
+                    <field name="name"/>
+                    <field name="food_trade_license_no" optional="hide"/>
+                    <field name="food_owner_name" optional="hide"/>
+                    <field name="food_cuisine_type" optional="hide"/>
+                    <field name="food_risk_level" widget="badge"/>
+                    <field name="phone" optional="hide"/>
+                    <field name="city"/>
+                    <field name="food_inspection_count" optional="hide"/>
+                    <field name="food_finding_count" optional="hide"/>
+                    <field name="food_certificate_count" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_res_partner_form_food_safety" model="ir.ui.view">
+            <field name="name">res.partner.form.food.safety</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/div[@name='button_box']" position="inside">
+                    <button name="action_view_food_safety_inspections" type="object" class="oe_stat_button" icon="fa-list">
+                        <field name="food_inspection_count" string="Inspections" widget="statinfo"/>
+                    </button>
+                    <button name="action_view_food_safety_findings" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
+                        <field name="food_finding_count" string="Findings" widget="statinfo"/>
+                    </button>
+                    <button name="action_view_food_safety_certificates" type="object" class="oe_stat_button" icon="fa-certificate">
+                        <field name="food_certificate_count" string="Certificates" widget="statinfo"/>
+                    </button>
+                </xpath>
+                <xpath expr="//sheet/notebook" position="inside">
+                    <page string="Food Safety">
+                        <group>
+                            <group>
+                                <field name="food_trade_license_no"/>
+                                <field name="food_owner_name"/>
+                            </group>
+                            <group>
+                                <field name="food_cuisine_type"/>
+                                <field name="food_risk_level"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="action_dm_food_establishment" model="ir.actions.act_window">
+            <field name="name">Establishments</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_res_partner_food_safety_search"/>
+            <field name="domain">[('is_company', '=', True)]</field>
+            <field name="context">{'default_is_company': 1}</field>
+            <field name="path">food-safety-establishments</field>
+        </record>
+
+        <menuitem id="menu_dm_food_safety_establishments" name="Establishments"
+            parent="menu_dm_food_safety_root" action="action_dm_food_establishment" sequence="15"
+            groups="dm_food_safety_inspection.group_food_safety_inspector"/>
+    </data>
+</odoo>

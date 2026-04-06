@@ -1,22 +1,70 @@
 # Dubai Food Safety Inspection
 
-A workflow-first Odoo addon for restaurant and venue inspections.
+Workflow-first Odoo addon for food safety inspections, corrective findings, and certificate tracking.
 
-## What it does
+## Features
 
-- Opens on a live dashboard with KPI cards, risk distribution, and recent inspections.
-- Tracks inspections through draft, ready, in-progress, supervisor review, pass, fail, and cancel stages.
-- Scores checklist lines with weighted risk and compliance calculations.
-- Provides an advisory AI summary that can be reviewed before it is copied into the follow-up note.
+- Dashboard-first operations with KPI cards, risk distribution, quick actions, and recent inspections.
+- Inspection workflow with controlled transitions:
+	- Draft -> Ready -> In Progress -> Waiting Supervisor -> Passed/Failed/Cancelled
+- Weighted checklist scoring (compliance score, risk score, risk band, grade).
+- AI advisory summary generation with manual apply-to-note workflow.
+- Establishment food profile fields on contacts.
+- Findings management with severity, status, overdue tracking, and violation tags.
+- Certificates management with status transitions and expiry validation.
+- Integration tabs/stat buttons inside the inspection form for findings and certificates.
 
-## AI summary flow
+## Menus Added
 
-- Generate a summary from the current inspection findings.
-- Review the structured advisory output.
-- Apply it to the follow-up note only when you want it persisted.
+- Food Safety -> Establishments
+- Food Safety -> Food Safety Inspections
+- Food Safety -> Findings
+- Food Safety -> Certificates
+- Food Safety -> Configuration -> Templates/Stages/Grades/Violation Tags
 
-## Notes
+## AI Summary Provider
 
-- The dashboard uses the normal backend client action pattern.
-- The AI summary falls back to a deterministic local summary when no OpenAI API key is configured.
-- Workflow transitions are still guarded by server-side actions.
+The addon requests Groq when configured, and falls back to deterministic local summaries when it is not.
+
+Environment variables:
+
+- `GROQ_API_KEY` (required for AI mode)
+- `GROQ_MODEL` (optional override, default: `llama-3.3-70b-versatile`)
+- `GROQ_USER_AGENT` (optional override)
+
+## Data Files Included
+
+- Sequences for inspections/findings/certificates
+- Inspection stages and grading bands
+- Checklist template seed data
+- Expanded demo data (`noupdate="1"`) across establishments, inspections, findings, certificates, tags, templates, and grades
+
+## Security
+
+- Role groups:
+	- Inspector
+	- Supervisor
+	- Manager
+- Company-aware access rules for inspections, findings, certificates, and violation tags.
+- ACL coverage for newly added models.
+
+## Quick Usage Flow
+
+1. Open Food Safety Dashboard.
+2. Start from a seeded establishment or create one.
+3. Create/execute an inspection from a checklist template.
+4. Submit for supervisor review.
+5. Track findings and certificates from the integrated inspection tabs.
+6. Generate AI summary and apply to follow-up note when approved.
+
+## Update Command
+
+```powershell
+& '.\.venv\Scripts\python.exe' 'odoo-bin' -d 'dm_food_safety_validation' -u 'dm_food_safety_inspection' --stop-after-init
+```
+
+## Test Command
+
+```powershell
+& '.\.venv\Scripts\python.exe' 'odoo-bin' -d 'dm_food_safety_validation' -u 'dm_food_safety_inspection' --test-enable --stop-after-init
+```

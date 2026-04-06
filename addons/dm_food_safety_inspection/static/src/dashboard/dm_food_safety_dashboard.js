@@ -1,16 +1,18 @@
 /** @odoo-module */
 
-import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { Layout } from "@web/search/layout";
 
 export class FoodSafetyDashboard extends Component {
+    static components = { Layout };
+    static template = "dm_food_safety_inspection.FoodSafetyDashboard";
+
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
-        this.actionElement = null;
-        this.delegateScrollClassAdded = false;
         this.state = useState({
             loading: true,
             error: null,
@@ -18,22 +20,24 @@ export class FoodSafetyDashboard extends Component {
         });
 
         onMounted(() => {
-            this.actionElement = this.el?.closest(".o_action");
-            if (this.actionElement && !this.actionElement.classList.contains("o_action_delegate_scroll")) {
-                this.actionElement.classList.add("o_action_delegate_scroll");
-                this.delegateScrollClassAdded = true;
-            }
-        });
-
-        onWillUnmount(() => {
-            if (this.delegateScrollClassAdded) {
-                this.actionElement?.classList.remove("o_action_delegate_scroll");
-            }
+            this.resetScrollPosition();
         });
 
         onWillStart(async () => {
             await this.loadDashboard();
         });
+    }
+
+    resetScrollPosition() {
+        const scrollContainer = this.el?.querySelector(".o_dm_food_safety_dashboard_content");
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+        }
+
+        const actionElement = this.el?.closest(".o_action");
+        if (actionElement) {
+            actionElement.scrollTop = 0;
+        }
     }
 
     async loadDashboard() {
@@ -47,6 +51,7 @@ export class FoodSafetyDashboard extends Component {
             this.notification.add(this.state.error, { type: "danger" });
         } finally {
             this.state.loading = false;
+            this.resetScrollPosition();
         }
     }
 
@@ -68,7 +73,5 @@ export class FoodSafetyDashboard extends Component {
         }
     }
 }
-
-FoodSafetyDashboard.template = "dm_food_safety_inspection.FoodSafetyDashboard";
 
 registry.category("actions").add("dm_food_safety_dashboard", FoodSafetyDashboard);

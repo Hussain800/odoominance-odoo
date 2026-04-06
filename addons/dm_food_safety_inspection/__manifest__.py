@@ -22,8 +22,14 @@ supervisor-gated outcomes, and demo-ready operational views.
         'data/dm_food_safety_grade_data.xml',
         'data/dm_food_checklist_template_data.xml',
         'views/dm_food_inspection_views.xml',
+        'views/dm_food_inspection_integration_views.xml',
         'views/dm_food_template_views.xml',
         'views/dm_food_stage_grade_views.xml',
+        'views/res_partner_food_profile_views.xml',
+        'views/dm_food_finding_views.xml',
+        'views/dm_food_certificate_views.xml',
+        'views/dm_food_violation_tag_views.xml',
+        'demo/dm_food_safety_demo.xml',
     ],
     'assets': {
         'web.assets_backend': [
@@ -32,9 +38,6 @@ supervisor-gated outcomes, and demo-ready operational views.
             'dm_food_safety_inspection/static/src/dashboard/dm_food_safety_dashboard.scss',
         ],
     },
-    'demo': [
-        'demo/dm_food_safety_demo.xml',
-    ],
     'application': True,
     'installable': True,
 }

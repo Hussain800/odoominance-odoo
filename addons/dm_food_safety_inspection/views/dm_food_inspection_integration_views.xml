@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_dm_food_inspection_form_integration" model="ir.ui.view">
+            <field name="name">dm.food.inspection.form.integration</field>
+            <field name="model">dm.food.inspection</field>
+            <field name="inherit_id" ref="dm_food_safety_inspection.view_dm_food_inspection_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form/sheet/div[hasclass('oe_title')]" position="before">
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_findings" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
+                            <field name="finding_count" string="Findings" widget="statinfo"/>
+                        </button>
+                        <button name="action_view_certificates" type="object" class="oe_stat_button" icon="fa-certificate">
+                            <field name="certificate_count" string="Certificates" widget="statinfo"/>
+                        </button>
+                    </div>
+                </xpath>
+                <xpath expr="//form/sheet/notebook" position="inside">
+                    <page string="Findings">
+                        <field name="finding_ids" mode="list,form" context="{'default_inspection_id': id, 'default_establishment_id': establishment_id}">
+                            <list editable="bottom" decoration-danger="severity == 'critical'" decoration-warning="is_overdue" decoration-muted="status in ['resolved', 'waived']">
+                                <field name="name"/>
+                                <field name="severity" widget="badge"/>
+                                <field name="status" widget="badge"/>
+                                <field name="deadline_date"/>
+                                <field name="is_overdue" optional="hide"/>
+                                <field name="tag_ids" widget="many2many_tags" optional="hide"/>
+                                <field name="corrective_action" optional="hide"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Certificates">
+                        <field name="certificate_ids" mode="list,form" context="{'default_inspection_id': id, 'default_establishment_id': establishment_id}">
+                            <list editable="bottom" decoration-danger="is_expired" decoration-muted="status == 'revoked'">
+                                <field name="name"/>
+                                <field name="status" widget="badge"/>
+                                <field name="issue_date"/>
+                                <field name="expiry_date"/>
+                                <field name="is_expired" optional="hide"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

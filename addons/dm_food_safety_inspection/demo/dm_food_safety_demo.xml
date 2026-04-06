@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
+    <data noupdate="1">
         <record id="dm_food_safety_demo_restaurant_1" model="res.partner">
             <field name="name">Palm Harbor Grill</field>
             <field name="is_company">1</field>
@@ -181,6 +181,570 @@
                     'actual_text': 'No staff briefing recorded.'
                 })
             ]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_3" model="res.partner">
+            <field name="name">Gulf Lantern Cafe</field>
+            <field name="is_company">1</field>
+            <field name="street">44 Jumeirah Beach Road</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">hello@gulflantern.example</field>
+            <field name="phone">+971 4 555 0103</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_review" model="dm.food.inspection">
+            <field name="name">FSI/2026/0003</field>
+            <field name="inspection_date">2026-04-06 09:45:00</field>
+            <field name="due_date">2026-04-07</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_waiting_supervisor"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_3"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="follow_up_note">One service corridor issue and a missing pest log need supervisor sign-off.</field>
+            <field name="line_ids" eval="[
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_1'),
+                    'sequence': 10,
+                    'name': 'Handwashing station stocked',
+                    'check_type': 'boolean',
+                    'severity': 'critical',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes',
+                    'requires_evidence': True,
+                    'evidence_note': 'Soap, water, and disposable towels were available.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_2'),
+                    'sequence': 20,
+                    'name': 'Cold storage temperature within range',
+                    'check_type': 'numeric',
+                    'severity': 'critical',
+                    'weight': 2,
+                    'minimum_value': 0,
+                    'maximum_value': 5,
+                    'actual_value': 4.8,
+                    'requires_evidence': True,
+                    'evidence_note': 'Chiller logs were within range.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_3'),
+                    'sequence': 30,
+                    'name': 'Food contact surfaces sanitized',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_4'),
+                    'sequence': 40,
+                    'name': 'Waste containers covered and emptied',
+                    'check_type': 'boolean',
+                    'severity': 'medium',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_5'),
+                    'sequence': 50,
+                    'name': 'Pest control log available',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'no',
+                    'requires_evidence': True,
+                    'evidence_note': 'The pest control log was missing from the manager station.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_6'),
+                    'sequence': 60,
+                    'name': 'Staff briefing recorded in log',
+                    'check_type': 'text',
+                    'severity': 'low',
+                    'weight': 1,
+                    'expected_text': 'briefing',
+                    'actual_text': 'Staff briefing recorded in the morning log.'
+                })
+            ]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_4" model="res.partner">
+            <field name="name">Marina Spice Bistro</field>
+            <field name="is_company">1</field>
+            <field name="street">19 Bluewaters Avenue</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">hello@marinaspice.example</field>
+            <field name="phone">+971 4 555 0104</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_in_progress" model="dm.food.inspection">
+            <field name="name">FSI/2026/0004</field>
+            <field name="inspection_date">2026-04-06 15:10:00</field>
+            <field name="due_date">2026-04-03</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_in_progress"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_4"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="note">Mid-shift inspection caught an out-of-range cold room and a weak pest control record.</field>
+            <field name="line_ids" eval="[
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_1'),
+                    'sequence': 10,
+                    'name': 'Handwashing station stocked',
+                    'check_type': 'boolean',
+                    'severity': 'critical',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes',
+                    'requires_evidence': True,
+                    'evidence_note': 'Soap, water, and disposable towels were available.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_2'),
+                    'sequence': 20,
+                    'name': 'Cold storage temperature within range',
+                    'check_type': 'numeric',
+                    'severity': 'critical',
+                    'weight': 2,
+                    'minimum_value': 0,
+                    'maximum_value': 5,
+                    'actual_value': 8.0,
+                    'requires_evidence': True,
+                    'evidence_note': 'The cold room thermometer read 8.0C during the inspection.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_3'),
+                    'sequence': 30,
+                    'name': 'Food contact surfaces sanitized',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_4'),
+                    'sequence': 40,
+                    'name': 'Waste containers covered and emptied',
+                    'check_type': 'boolean',
+                    'severity': 'medium',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'yes'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_5'),
+                    'sequence': 50,
+                    'name': 'Pest control log available',
+                    'check_type': 'boolean',
+                    'severity': 'high',
+                    'weight': 1,
+                    'expected_boolean': 'yes',
+                    'actual_boolean': 'no',
+                    'requires_evidence': True,
+                    'evidence_note': 'The pest control certificate was not posted at the manager desk.'
+                }),
+                (0, 0, {
+                    'template_line_id': ref('dm_food_safety_template_restaurant_line_6'),
+                    'sequence': 60,
+                    'name': 'Staff briefing recorded in log',
+                    'check_type': 'text',
+                    'severity': 'low',
+                    'weight': 1,
+                    'expected_text': 'briefing',
+                    'actual_text': 'Staff briefing recorded before service.'
+                })
+            ]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_5" model="res.partner">
+            <field name="name">Harborline Seafood House</field>
+            <field name="is_company">1</field>
+            <field name="street">72 Al Mina Street</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">hello@harborline.example</field>
+            <field name="phone">+971 4 555 0105</field>
+            <field name="food_trade_license_no">DTL-2026-2055</field>
+            <field name="food_owner_name">Nadia Al Kareem</field>
+            <field name="food_cuisine_type">Seafood Grill</field>
+            <field name="food_risk_level">medium</field>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_6" model="res.partner">
+            <field name="name">Old Souk Spice Room</field>
+            <field name="is_company">1</field>
+            <field name="street">11 Al Fahidi Lane</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">team@oldsoukspice.example</field>
+            <field name="phone">+971 4 555 0106</field>
+            <field name="food_trade_license_no">DTL-2026-2056</field>
+            <field name="food_owner_name">Faisal Rahman</field>
+            <field name="food_cuisine_type">Levantine</field>
+            <field name="food_risk_level">high</field>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_7" model="res.partner">
+            <field name="name">Creekside Bento Bar</field>
+            <field name="is_company">1</field>
+            <field name="street">58 Baniyas Wharf</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">ops@creeksidebento.example</field>
+            <field name="phone">+971 4 555 0107</field>
+            <field name="food_trade_license_no">DTL-2026-2057</field>
+            <field name="food_owner_name">Haruto Sato</field>
+            <field name="food_cuisine_type">Japanese Fast Casual</field>
+            <field name="food_risk_level">low</field>
+        </record>
+
+        <record id="dm_food_safety_demo_restaurant_8" model="res.partner">
+            <field name="name">Skyline Tandoor Lounge</field>
+            <field name="is_company">1</field>
+            <field name="street">203 Sheikh Rashid Tower</field>
+            <field name="city">Dubai</field>
+            <field name="country_id" ref="base.ae"/>
+            <field name="email">service@skylinetandoor.example</field>
+            <field name="phone">+971 4 555 0108</field>
+            <field name="food_trade_license_no">DTL-2026-2058</field>
+            <field name="food_owner_name">Amrita Kapoor</field>
+            <field name="food_cuisine_type">North Indian</field>
+            <field name="food_risk_level">critical</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_ready_5" model="dm.food.inspection">
+            <field name="name">FSI/2026/0005</field>
+            <field name="inspection_date">2026-04-06 10:30:00</field>
+            <field name="due_date">2026-04-08</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_ready"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_5"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="note">Pre-lunch service check queued for final execution.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_in_progress_6" model="dm.food.inspection">
+            <field name="name">FSI/2026/0006</field>
+            <field name="inspection_date">2026-04-06 11:45:00</field>
+            <field name="due_date">2026-04-04</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_in_progress"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_6"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="follow_up_note">Inspector escalated thermometer calibration and sanitizer log checks.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_waiting_7" model="dm.food.inspection">
+            <field name="name">FSI/2026/0007</field>
+            <field name="inspection_date">2026-04-06 16:20:00</field>
+            <field name="due_date">2026-04-09</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_waiting_supervisor"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_7"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="follow_up_note">Awaiting supervisor sign-off after document validation.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_inspection_draft_8" model="dm.food.inspection">
+            <field name="name">FSI/2026/0008</field>
+            <field name="inspection_date">2026-04-07 08:15:00</field>
+            <field name="due_date">2026-04-11</field>
+            <field name="template_id" ref="dm_food_safety_template_restaurant"/>
+            <field name="stage_id" ref="dm_food_safety_stage_draft"/>
+            <field name="establishment_id" ref="dm_food_safety_demo_restaurant_8"/>
+            <field name="inspector_id" ref="base.user_admin"/>
+            <field name="supervisor_id" ref="base.user_admin"/>
+            <field name="note">Draft record for upcoming evening shift inspection.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_cafe" model="dm.food.checklist.template">
+            <field name="name">Cafe Counter Hygiene Checklist</field>
+            <field name="code">demo_cafe_ops</field>
+            <field name="sequence">20</field>
+            <field name="note">Demo template for quick-service coffee outlets.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_bakery" model="dm.food.checklist.template">
+            <field name="name">Bakery Production Safety Checklist</field>
+            <field name="code">demo_bakery_ops</field>
+            <field name="sequence">30</field>
+            <field name="note">Demo template focused on dough prep and display controls.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_cloud_kitchen" model="dm.food.checklist.template">
+            <field name="name">Cloud Kitchen Dispatch Checklist</field>
+            <field name="code">demo_cloud_kitchen</field>
+            <field name="sequence">40</field>
+            <field name="note">Demo template for multi-brand cloud kitchen workflows.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_catering" model="dm.food.checklist.template">
+            <field name="name">Catering Unit Transport Checklist</field>
+            <field name="code">demo_catering_unit</field>
+            <field name="sequence">50</field>
+            <field name="note">Demo template for off-site food transport and holding control.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_hotel_buffet" model="dm.food.checklist.template">
+            <field name="name">Hotel Buffet Line Checklist</field>
+            <field name="code">demo_hotel_buffet</field>
+            <field name="sequence">60</field>
+            <field name="note">Demo template for buffet replenishment and hot-hold compliance.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_template_school_canteen" model="dm.food.checklist.template">
+            <field name="name">School Canteen Hygiene Checklist</field>
+            <field name="code">demo_school_canteen</field>
+            <field name="sequence">70</field>
+            <field name="note">Demo template for canteen meal prep and allergen controls.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_grade_g" model="dm.food.inspection.grade">
+            <field name="name">G - Demo Monitoring</field>
+            <field name="code">G</field>
+            <field name="sequence">90</field>
+            <field name="min_compliance">0</field>
+            <field name="max_compliance">100</field>
+            <field name="color">6</field>
+            <field name="description">Supplemental demo grade for training dashboards.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_grade_h" model="dm.food.inspection.grade">
+            <field name="name">H - Demo Reference</field>
+            <field name="code">H</field>
+            <field name="sequence">100</field>
+            <field name="min_compliance">0</field>
+            <field name="max_compliance">100</field>
+            <field name="color">7</field>
+            <field name="description">Supplemental demo grade kept for presentation-only use.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_cold_chain" model="dm.food.violation.tag">
+            <field name="name">Cold Chain Break</field>
+            <field name="code">DEMO_COLD_CHAIN</field>
+            <field name="color">1</field>
+            <field name="description">Cold storage or transfer temperatures exceeded threshold.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_hand_hygiene" model="dm.food.violation.tag">
+            <field name="name">Hand Hygiene Gap</field>
+            <field name="code">DEMO_HAND_HYGIENE</field>
+            <field name="color">2</field>
+            <field name="description">Handwashing compliance controls were incomplete.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_pest_risk" model="dm.food.violation.tag">
+            <field name="name">Pest Risk</field>
+            <field name="code">DEMO_PEST_RISK</field>
+            <field name="color">3</field>
+            <field name="description">Pest monitoring or control evidence was not current.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_sanitation" model="dm.food.violation.tag">
+            <field name="name">Sanitation Lapse</field>
+            <field name="code">DEMO_SANITATION</field>
+            <field name="color">4</field>
+            <field name="description">Cleaning schedule or sanitation execution was incomplete.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_labeling" model="dm.food.violation.tag">
+            <field name="name">Labeling Error</field>
+            <field name="code">DEMO_LABELING</field>
+            <field name="color">5</field>
+            <field name="description">Prepared foods lacked compliant date or allergen labels.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_cross_contact" model="dm.food.violation.tag">
+            <field name="name">Cross-Contact Risk</field>
+            <field name="code">DEMO_CROSS_CONTACT</field>
+            <field name="color">6</field>
+            <field name="description">Separation controls were weak for allergens or raw proteins.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_training" model="dm.food.violation.tag">
+            <field name="name">Training Gap</field>
+            <field name="code">DEMO_TRAINING</field>
+            <field name="color">7</field>
+            <field name="description">Shift training or briefing records were missing.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_tag_equipment" model="dm.food.violation.tag">
+            <field name="name">Equipment Integrity</field>
+            <field name="code">DEMO_EQUIPMENT</field>
+            <field name="color">8</field>
+            <field name="description">Equipment calibration or preventive maintenance was overdue.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_1" model="dm.food.finding">
+            <field name="name">FSF/2026/1001</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_fail"/>
+            <field name="severity">critical</field>
+            <field name="status">open</field>
+            <field name="deadline_date">2026-04-08</field>
+            <field name="description">Cold room recorded temperatures above safe storage limits.</field>
+            <field name="corrective_action">Repair compressor and verify hourly logs for 48 hours.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_cold_chain'), ref('dm_food_safety_demo_tag_equipment')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_2" model="dm.food.finding">
+            <field name="name">FSF/2026/1002</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_fail"/>
+            <field name="severity">high</field>
+            <field name="status">in_progress</field>
+            <field name="deadline_date">2026-04-10</field>
+            <field name="description">Handwashing station supplies were missing during rush hours.</field>
+            <field name="corrective_action">Assign hourly refill checks and supervisor sign-off.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_hand_hygiene'), ref('dm_food_safety_demo_tag_training')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_3" model="dm.food.finding">
+            <field name="name">FSF/2026/1003</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_review"/>
+            <field name="severity">high</field>
+            <field name="status">open</field>
+            <field name="deadline_date">2026-04-09</field>
+            <field name="description">Pest control service certificate was not displayed in manager station.</field>
+            <field name="corrective_action">Upload updated certificate and maintain visible copy on site.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_pest_risk')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_4" model="dm.food.finding">
+            <field name="name">FSF/2026/1004</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_in_progress"/>
+            <field name="severity">medium</field>
+            <field name="status">resolved</field>
+            <field name="deadline_date">2026-04-06</field>
+            <field name="description">Prep counters were sanitized late after lunch transition.</field>
+            <field name="corrective_action">Apply documented 30-minute sanitation checkpoints.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_sanitation')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_5" model="dm.food.finding">
+            <field name="name">FSF/2026/1005</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_ready_5"/>
+            <field name="severity">low</field>
+            <field name="status">waived</field>
+            <field name="deadline_date">2026-04-12</field>
+            <field name="description">One prepacked sauce tray was missing a secondary label.</field>
+            <field name="corrective_action">Use duplicate print labels for backup traceability.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_labeling')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_6" model="dm.food.finding">
+            <field name="name">FSF/2026/1006</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_in_progress_6"/>
+            <field name="severity">critical</field>
+            <field name="status">open</field>
+            <field name="deadline_date">2026-04-07</field>
+            <field name="description">Raw and ready-to-eat ingredients were stored in shared bins.</field>
+            <field name="corrective_action">Rezone storage racks and enforce color-coded containers.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_cross_contact'), ref('dm_food_safety_demo_tag_training')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_7" model="dm.food.finding">
+            <field name="name">FSF/2026/1007</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_waiting_7"/>
+            <field name="severity">medium</field>
+            <field name="status">in_progress</field>
+            <field name="deadline_date">2026-04-11</field>
+            <field name="description">Staff briefing notes were not signed by the shift lead.</field>
+            <field name="corrective_action">Require digital acknowledgment in the opening checklist.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_training')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_finding_8" model="dm.food.finding">
+            <field name="name">FSF/2026/1008</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_draft_8"/>
+            <field name="severity">high</field>
+            <field name="status">resolved</field>
+            <field name="deadline_date">2026-04-13</field>
+            <field name="description">Thermometer calibration proof was out of date by 10 days.</field>
+            <field name="corrective_action">Upload latest calibration certificate and schedule monthly alerts.</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('dm_food_safety_demo_tag_equipment')])]"/>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_1" model="dm.food.certificate">
+            <field name="name">FSC/2026/2001</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_pass"/>
+            <field name="issue_date">2026-04-05</field>
+            <field name="expiry_date">2026-10-05</field>
+            <field name="status">active</field>
+            <field name="notes">Issued after a full pass with complete evidence pack.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_2" model="dm.food.certificate">
+            <field name="name">FSC/2026/2002</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_fail"/>
+            <field name="issue_date">2026-03-01</field>
+            <field name="expiry_date">2026-08-31</field>
+            <field name="status">revoked</field>
+            <field name="notes">Revoked following repeated critical cold-chain findings.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_3" model="dm.food.certificate">
+            <field name="name">FSC/2026/2003</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_review"/>
+            <field name="issue_date">2026-04-01</field>
+            <field name="expiry_date">2026-09-30</field>
+            <field name="status">draft</field>
+            <field name="notes">Draft certificate pending supervisor review outcome.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_4" model="dm.food.certificate">
+            <field name="name">FSC/2026/2004</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_in_progress"/>
+            <field name="issue_date">2025-10-01</field>
+            <field name="expiry_date">2026-03-31</field>
+            <field name="status">expired</field>
+            <field name="notes">Historical certificate expired and awaiting renewal inspection.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_5" model="dm.food.certificate">
+            <field name="name">FSC/2026/2005</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_ready_5"/>
+            <field name="issue_date">2026-04-02</field>
+            <field name="expiry_date">2026-10-01</field>
+            <field name="status">active</field>
+            <field name="notes">Active certificate with quarterly monitoring required.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_6" model="dm.food.certificate">
+            <field name="name">FSC/2026/2006</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_in_progress_6"/>
+            <field name="issue_date">2026-01-10</field>
+            <field name="expiry_date">2026-07-10</field>
+            <field name="status">draft</field>
+            <field name="notes">Draft renewal pending closure of open high-risk findings.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_7" model="dm.food.certificate">
+            <field name="name">FSC/2026/2007</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_waiting_7"/>
+            <field name="issue_date">2026-02-12</field>
+            <field name="expiry_date">2026-08-12</field>
+            <field name="status">active</field>
+            <field name="notes">Active certificate retained while follow-up actions are tracked.</field>
+        </record>
+
+        <record id="dm_food_safety_demo_certificate_8" model="dm.food.certificate">
+            <field name="name">FSC/2026/2008</field>
+            <field name="inspection_id" ref="dm_food_safety_demo_inspection_draft_8"/>
+            <field name="issue_date">2025-09-15</field>
+            <field name="expiry_date">2026-03-15</field>
+            <field name="status">expired</field>
+            <field name="notes">Expired certificate used as a renewal planning sample.</field>
         </record>
     </data>
 </odoo>
