@@ -1,7 +1,17 @@
 # -*- coding: utf-8 -*-
 
+import json
+import logging
+import os
+from urllib import error as urllib_error
+from urllib import request as urllib_request
+
+from markupsafe import escape
 from odoo import Command, api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
+
+
+_logger = logging.getLogger(__name__)
 
 
 RISK_BAND_SELECTION = [
@@ -51,6 +61,16 @@ class FoodSafetyInspection(models.Model):
     total_possible_score = fields.Float(compute='_compute_scores', store=True)
     achieved_score = fields.Float(compute='_compute_scores', store=True)
     is_overdue = fields.Boolean(compute='_compute_scores', store=True)
+    ai_summary_json = fields.Json(copy=False)
+    ai_summary_html = fields.Html(copy=False)
+    ai_summary_source = fields.Selection(
+        [('fallback', 'Fallback'), ('ai', 'AI')],
+        copy=False,
+        readonly=True,
+        tracking=True,
+    )
+    ai_summary_generated_at = fields.Datetime(copy=False, readonly=True, tracking=True)
+    ai_summary_applied_at = fields.Datetime(copy=False, readonly=True, tracking=True)
     done = fields.Boolean(related='stage_id.done', store=True)
 
     _risk_score_range = models.Constraint(
@@ -222,14 +242,14 @@ class FoodSafetyInspection(models.Model):
                 raise UserError(_('Only inspections waiting for supervisor review can be marked as passed.'))
             if inspection.critical_fail_count or inspection.compliance_score < 60:
                 raise UserError(_('This inspection does not meet the minimum compliance needed to pass.'))
-            inspection.supervisor_id = self.env.user
+            inspection.supervisor_id = self._get_review_supervisor_user()
             inspection._set_stage('passed', _('Inspection passed by supervisor.'))
 
     def action_mark_failed(self):
         for inspection in self:
             if inspection.stage_id.code != 'waiting_supervisor':
                 raise UserError(_('Only inspections waiting for supervisor review can be marked as failed.'))
-            inspection.supervisor_id = self.env.user
+            inspection.supervisor_id = self._get_review_supervisor_user()
             inspection._set_stage('failed', _('Inspection failed by supervisor.'))
 
     def action_cancel(self):
@@ -241,3 +261,469 @@ class FoodSafetyInspection(models.Model):
     def action_reset_draft(self):
         for inspection in self:
             inspection._set_stage('draft', _('Inspection reset to draft.'))
+
+    def _dashboard_quick_actions(self):
+        actions = [
+            {
+                'key': 'open_inspections',
+                'label': _('All inspections'),
+                'description': _('Open the complete inspection board.'),
+                'abbr': 'INS',
+                'tone': 'teal',
+            },
+            {
+                'key': 'new_inspection',
+                'label': _('New inspection'),
+                'description': _('Create a fresh inspection from a checklist template.'),
+                'abbr': 'NEW',
+                'tone': 'gold',
+            },
+            {
+                'key': 'review_queue',
+                'label': _('Review queue'),
+                'description': _('Focus on inspections waiting for supervisor approval.'),
+                'abbr': 'REV',
+                'tone': 'rose',
+            },
+        ]
+        if self.env.user.has_group('dm_food_safety_inspection.group_food_safety_supervisor'):
+            actions.append(
+                {
+                    'key': 'templates',
+                    'label': _('Checklist templates'),
+                    'description': _('Maintain the template library and scoring standards.'),
+                    'abbr': 'TMP',
+                    'tone': 'slate',
+                }
+            )
+        return actions
+
+    def _get_review_supervisor_user(self):
+        supervisor = self.env.user
+        if supervisor._is_superuser():
+            supervisor = self.env.ref('base.user_admin')
+        return supervisor
+
+    @api.model
+    def get_dashboard_payload(self):
+        inspection_model = self.env['dm.food.inspection']
+        stage_model = self.env['dm.food.inspection.stage']
+        inspections = inspection_model.search([])
+
+        total_count = len(inspections)
+        active_count = inspection_model.search_count([('stage_id.done', '=', False)])
+        awaiting_review_count = inspection_model.search_count([('stage_id.code', '=', 'waiting_supervisor')])
+        overdue_count = inspection_model.search_count([('is_overdue', '=', True)])
+        critical_count = sum(1 for inspection in inspections if inspection.risk_band == 'critical' or inspection.stage_id.code == 'failed')
+        passed_count = inspection_model.search_count([('stage_id.code', '=', 'passed')])
+        failed_count = inspection_model.search_count([('stage_id.code', '=', 'failed')])
+        evaluation_count = passed_count + failed_count
+        average_group = inspection_model.read_group([], ['compliance_score:avg'], [])
+        average_data = average_group[0] if average_group else {}
+        average_compliance = round(average_data.get('compliance_score_avg') or average_data.get('compliance_score') or 0)
+        pass_rate = round((passed_count / evaluation_count) * 100) if evaluation_count else 0
+
+        risk_labels = dict(RISK_BAND_SELECTION)
+        dashboard_payload = {
+            'headline': _('Food safety command center'),
+            'subheadline': _(
+                '%(active)s active inspections, %(review)s awaiting review, %(critical)s critical risk'
+            ) % {
+                'active': active_count,
+                'review': awaiting_review_count,
+                'critical': critical_count,
+            },
+            'hero_badges': [
+                {'label': _('Active queue'), 'value': active_count},
+                {'label': _('Awaiting review'), 'value': awaiting_review_count},
+                {'label': _('Critical risk'), 'value': critical_count},
+            ],
+            'kpis': [
+                {
+                    'key': 'total_inspections',
+                    'label': _('Live inspections'),
+                    'value': total_count,
+                    'help': _('All records visible to your account.'),
+                    'tone': 'teal',
+                },
+                {
+                    'key': 'awaiting_review',
+                    'label': _('Awaiting review'),
+                    'value': awaiting_review_count,
+                    'help': _('Waiting for supervisor approval.'),
+                    'tone': 'amber',
+                },
+                {
+                    'key': 'overdue_inspections',
+                    'label': _('Overdue'),
+                    'value': overdue_count,
+                    'help': _('Past due and still open.'),
+                    'tone': 'rose',
+                },
+                {
+                    'key': 'critical_risk',
+                    'label': _('Critical risk'),
+                    'value': critical_count,
+                    'help': _('High urgency records that need attention.'),
+                    'tone': 'slate',
+                },
+                {
+                    'key': 'average_compliance',
+                    'label': _('Average compliance'),
+                    'value': average_compliance,
+                    'suffix': '%',
+                    'help': _('Average across visible inspections.'),
+                    'tone': 'gold',
+                },
+                {
+                    'key': 'pass_rate',
+                    'label': _('Pass rate'),
+                    'value': pass_rate,
+                    'suffix': '%',
+                    'help': _('Completed inspections that passed.'),
+                    'tone': 'emerald',
+                },
+            ],
+            'risk_distribution': [],
+            'stage_distribution': [],
+            'recent_inspections': [],
+            'quick_actions': self._dashboard_quick_actions(),
+        }
+
+        for risk_code, risk_label in RISK_BAND_SELECTION:
+            count = inspection_model.search_count([('risk_band', '=', risk_code)])
+            dashboard_payload['risk_distribution'].append(
+                {
+                    'key': risk_code,
+                    'label': risk_label,
+                    'count': count,
+                    'count_text': _('%(count)s inspections') % {'count': count},
+                    'percentage': round((count / total_count) * 100) if total_count else 0,
+                    'tone': risk_code,
+                }
+            )
+
+        for stage in stage_model.search([], order='sequence, id'):
+            count = inspection_model.search_count([('stage_id', '=', stage.id)])
+            dashboard_payload['stage_distribution'].append(
+                {
+                    'key': stage.code,
+                    'label': stage.name,
+                    'count': count,
+                    'count_text': _('%(count)s inspections') % {'count': count},
+                    'percentage': round((count / total_count) * 100) if total_count else 0,
+                    'tone': stage.code,
+                }
+            )
+
+        recent_records = inspection_model.search([], order='inspection_date desc, id desc', limit=5)
+        for inspection in recent_records:
+            dashboard_payload['recent_inspections'].append(
+                {
+                    'id': inspection.id,
+                    'name': inspection.name,
+                    'establishment': inspection.establishment_id.display_name,
+                    'stage': inspection.stage_id.display_name,
+                    'risk_band': risk_labels.get(inspection.risk_band, inspection.risk_band or ''),
+                    'risk_score': inspection.risk_score,
+                    'compliance_score': inspection.compliance_score,
+                    'compliance_text': '%s%%' % inspection.compliance_score,
+                    'grade': inspection.grade_id.display_name if inspection.grade_id else '',
+                    'inspection_date': inspection.inspection_date.strftime('%b %d, %Y %H:%M') if inspection.inspection_date else '',
+                    'is_overdue': inspection.is_overdue,
+                }
+            )
+
+        return dashboard_payload
+
+    @api.model
+    def action_dashboard_get_action(self, action_key):
+        if action_key == 'open_inspections':
+            action = self.env.ref('dm_food_safety_inspection.action_dm_food_inspection').read()[0]
+            action['name'] = _('All inspections')
+            action['context'] = {}
+            return action
+        if action_key == 'review_queue':
+            action = self.env.ref('dm_food_safety_inspection.action_dm_food_inspection').read()[0]
+            action['name'] = _('Review queue')
+            action['context'] = {}
+            action['domain'] = [('stage_id.code', '=', 'waiting_supervisor')]
+            return action
+        if action_key == 'new_inspection':
+            return {
+                'type': 'ir.actions.act_window',
+                'name': _('New inspection'),
+                'res_model': 'dm.food.inspection',
+                'view_mode': 'form',
+                'views': [(False, 'form')],
+                'target': 'current',
+                'context': {
+                    'default_inspector_id': self.env.user.id,
+                    'default_company_id': self.env.company.id,
+                },
+            }
+        if action_key == 'templates':
+            if not self.env.user.has_group('dm_food_safety_inspection.group_food_safety_supervisor'):
+                raise UserError(_('Only supervisors can manage checklist templates.'))
+            action = self.env.ref('dm_food_safety_inspection.action_dm_food_template').read()[0]
+            action['context'] = {}
+            return action
+        raise UserError(_('Unknown dashboard action: %s') % action_key)
+
+    def _build_ai_summary_context(self):
+        self.ensure_one()
+        top_findings = []
+        recommendation_items = []
+
+        if self.critical_fail_count:
+            top_findings.append(
+                _('%(count)s critical checklist item(s) failed.') % {'count': self.critical_fail_count}
+            )
+            recommendation_items.append(
+                _('Resolve every critical finding before the inspection is escalated.'))
+        if self.pending_line_count:
+            top_findings.append(
+                _('%(count)s checklist item(s) are still pending.') % {'count': self.pending_line_count}
+            )
+            recommendation_items.append(
+                _('Complete the remaining checklist items and add any missing evidence.'))
+        if self.is_overdue:
+            top_findings.append(_('The inspection is overdue.'))
+            recommendation_items.append(_('Escalate the inspection and close out the open findings today.'))
+        if self.risk_score >= 60:
+            top_findings.append(_('Overall risk is critical.'))
+            recommendation_items.append(_('Prioritise the highest-risk corrective actions immediately.'))
+        elif self.risk_score >= 30:
+            top_findings.append(_('Overall risk is high.'))
+            recommendation_items.append(_('Review the failed controls and verify corrective actions.'))
+        elif self.risk_score >= 10:
+            top_findings.append(_('Overall risk is moderate.'))
+            recommendation_items.append(_('Monitor the weaker controls and confirm follow-up evidence.'))
+        else:
+            top_findings.append(_('The inspection is currently low risk.'))
+            recommendation_items.append(_('Keep the current controls in place and file the record.'))
+
+        if not recommendation_items:
+            recommendation_items.append(_('Continue with the existing workflow and supervisor review.'))
+
+        return {
+            'inspection_name': self.name,
+            'establishment_name': self.establishment_id.display_name,
+            'inspection_date': self.inspection_date.strftime('%b %d, %Y %H:%M') if self.inspection_date else '',
+            'due_date': self.due_date.strftime('%b %d, %Y') if self.due_date else '',
+            'stage_name': self.stage_id.display_name,
+            'stage_code': self.stage_id.code,
+            'risk_band': self.risk_band,
+            'risk_score': self.risk_score,
+            'compliance_score': self.compliance_score,
+            'grade': self.grade_id.display_name if self.grade_id else '',
+            'critical_fail_count': self.critical_fail_count,
+            'pending_line_count': self.pending_line_count,
+            'top_findings': top_findings,
+            'recommended_actions': recommendation_items,
+            'line_items': [
+                {
+                    'name': line.name,
+                    'result': line.result,
+                    'severity': line.severity,
+                    'critical_failure': line.critical_failure,
+                    'score': line.line_score,
+                    'max_score': line.line_max_score,
+                    'evidence_note': line.evidence_note or '',
+                }
+                for line in self.line_ids
+            ],
+        }
+
+    def _build_fallback_ai_summary(self):
+        self.ensure_one()
+        context = self._build_ai_summary_context()
+        summary_bits = [
+            _('%(establishment)s is at %(risk_band)s risk with a compliance score of %(score)s%%.')
+            % {
+                'establishment': context['establishment_name'],
+                'risk_band': context['risk_band'] or _('unknown'),
+                'score': context['compliance_score'],
+            }
+        ]
+        if context['critical_fail_count']:
+            summary_bits.append(
+                _('%(count)s critical item(s) still need attention.') % {'count': context['critical_fail_count']}
+            )
+        if context['pending_line_count']:
+            summary_bits.append(
+                _('%(count)s checklist item(s) remain open.') % {'count': context['pending_line_count']}
+            )
+        if self.is_overdue:
+            summary_bits.append(_('The record is overdue and should be resolved today.'))
+
+        return {
+            'title': _('Advisory summary for %(name)s') % {'name': self.name},
+            'summary': ' '.join(summary_bits),
+            'priority': 'critical' if self.risk_score >= 60 else 'high' if self.risk_score >= 30 else 'medium' if self.risk_score >= 10 else 'low',
+            'top_findings': context['top_findings'],
+            'recommended_actions': context['recommended_actions'],
+            'source': 'fallback',
+        }
+
+    def _request_openai_summary(self):
+        self.ensure_one()
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            return None
+
+        model = os.environ.get('OPENAI_MODEL', 'gpt-5.4-mini')
+        context = self._build_ai_summary_context()
+        prompt = _(
+            'Return one JSON object with the keys title, summary, priority, top_findings, and recommended_actions. '
+            'Keep it advisory only, do not change the workflow stage, and speak clearly for a food safety supervisor. '
+            'Use short bullet-style strings inside the arrays.'
+        )
+        payload = {
+            'model': model,
+            'messages': [
+                {'role': 'system', 'content': prompt + ' JSON only.'},
+                {'role': 'user', 'content': json.dumps(context, ensure_ascii=False)},
+            ],
+            'response_format': {'type': 'json_object'},
+            'temperature': 0.2,
+        }
+        request = urllib_request.Request(
+            'https://api.openai.com/v1/chat/completions',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            },
+            method='POST',
+        )
+
+        try:
+            with urllib_request.urlopen(request, timeout=20) as response:
+                body = json.loads(response.read().decode('utf-8'))
+        except (urllib_error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
+            _logger.exception('Food safety AI summary provider failed; using fallback summary.')
+            return None
+
+        choices = body.get('choices') or []
+        if not choices:
+            return None
+        message = choices[0].get('message') or {}
+        content = message.get('content') or ''
+        if not content:
+            return None
+
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            return None
+        return self._sanitize_ai_summary_payload(data)
+
+    def _sanitize_ai_summary_payload(self, data):
+        self.ensure_one()
+        title = data.get('title') or _('Advisory summary for %(name)s') % {'name': self.name}
+        summary = data.get('summary') or self._build_fallback_ai_summary()['summary']
+        priority = data.get('priority') if data.get('priority') in {'low', 'medium', 'high', 'critical'} else 'medium'
+        top_findings = data.get('top_findings') or []
+        recommended_actions = data.get('recommended_actions') or []
+        return {
+            'title': title,
+            'summary': summary,
+            'priority': priority,
+            'top_findings': [str(item) for item in top_findings][:5],
+            'recommended_actions': [str(item) for item in recommended_actions][:5],
+            'source': 'ai',
+        }
+
+    def _render_ai_summary_html(self, payload):
+        summary_items = ''.join('<li>%s</li>' % escape(item) for item in payload['top_findings'])
+        action_items = ''.join('<li>%s</li>' % escape(item) for item in payload['recommended_actions'])
+        return (
+            '<div class="o_dm_ai_summary_note">'
+            '<section class="o_dm_ai_summary_shell">'
+            '<header class="o_dm_ai_summary_header">'
+            '<section class="o_dm_ai_summary_title_block">'
+            '<p class="o_dm_ai_summary_kicker">AI summary</p>'
+            '<h3>%s</h3>'
+            '</section>'
+            '<span class="o_dm_ai_summary_priority o_dm_priority_%s">%s</span>'
+            '</header>'
+            '<p class="o_dm_ai_summary_body">%s</p>'
+            '<section class="o_dm_ai_summary_columns">'
+            '<article>'
+            '<h4>%s</h4>'
+            '<ul>%s</ul>'
+            '</article>'
+            '<article>'
+            '<h4>%s</h4>'
+            '<ul>%s</ul>'
+            '</article>'
+            '</section>'
+            '</section>'
+            '</div>'
+        ) % (
+            escape(payload['title']),
+            escape(payload['priority']),
+            escape(payload['priority'].title()),
+            escape(payload['summary']),
+            escape(_('Top findings')),
+            summary_items,
+            escape(_('Recommended actions')),
+            action_items,
+        )
+
+    def _merge_ai_summary_into_follow_up(self, existing_note, summary_html):
+        marker = '<div class="o_dm_ai_summary_note">'
+        existing_note = existing_note or ''
+        start = existing_note.find(marker)
+        if start == -1:
+            if existing_note:
+                return '%s<hr/>%s' % (existing_note, summary_html)
+            return summary_html
+
+        end = existing_note.find('</div>', start)
+        if end == -1:
+            if existing_note:
+                return '%s<hr/>%s' % (existing_note, summary_html)
+            return summary_html
+
+        end += len('</div>')
+        return '%s%s%s' % (existing_note[:start], summary_html, existing_note[end:])
+
+    def _generate_ai_summary_payload(self):
+        self.ensure_one()
+        payload = self._request_openai_summary()
+        if payload:
+            return payload
+        return self._build_fallback_ai_summary()
+
+    def action_generate_ai_summary(self):
+        for inspection in self:
+            payload = inspection._generate_ai_summary_payload()
+            inspection.write(
+                {
+                    'ai_summary_json': payload,
+                    'ai_summary_html': inspection._render_ai_summary_html(payload),
+                    'ai_summary_source': payload['source'],
+                    'ai_summary_generated_at': fields.Datetime.now(),
+                }
+            )
+            inspection.message_post(
+                body=_('AI summary generated for %(name)s using %(source)s mode.') % {
+                    'name': inspection.name,
+                    'source': payload['source'],
+                }
+            )
+
+    def action_apply_ai_summary(self):
+        for inspection in self:
+            if not inspection.ai_summary_html:
+                raise UserError(_('Generate an AI summary before applying it to the follow-up note.'))
+            follow_up_note = inspection._merge_ai_summary_into_follow_up(inspection.follow_up_note, inspection.ai_summary_html)
+            inspection.write(
+                {
+                    'follow_up_note': follow_up_note,
+                    'ai_summary_applied_at': fields.Datetime.now(),
+                }
+            )
+            inspection.message_post(body=_('AI summary applied to the follow-up note.'))

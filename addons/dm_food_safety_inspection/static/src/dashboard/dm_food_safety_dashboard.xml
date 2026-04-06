@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="dm_food_safety_inspection.FoodSafetyDashboard" owl="1">
+        <div class="o_dm_food_safety_dashboard">
+            <t t-if="state.loading">
+                <div class="o_dm_dashboard_state_card o_dm_dashboard_loading">
+                    <div class="spinner-border text-success" role="status" aria-hidden="true"></div>
+                    <p>Loading the food safety dashboard.</p>
+                </div>
+            </t>
+            <t t-elif="state.error">
+                <div class="o_dm_dashboard_state_card o_dm_dashboard_error">
+                    <p class="o_dm_dashboard_state_kicker">Dashboard unavailable</p>
+                    <h1>We could not load the live inspection data.</h1>
+                    <p t-esc="state.error"/>
+                    <button type="button" class="btn btn-primary" t-on-click="reloadDashboard">Try again</button>
+                </div>
+            </t>
+            <t t-else="">
+                <section class="o_dm_dashboard_hero">
+                    <div class="o_dm_dashboard_hero_copy">
+                        <p class="o_dm_dashboard_kicker">Dubai Food Safety Inspection</p>
+                        <h1 t-esc="state.data.headline"/>
+                        <p class="o_dm_dashboard_subheadline" t-esc="state.data.subheadline"/>
+                        <div class="o_dm_dashboard_badges">
+                            <t t-foreach="state.data.hero_badges" t-as="badge" t-key="badge.label">
+                                <span class="o_dm_dashboard_badge">
+                                    <strong t-esc="badge.value"/>
+                                    <span t-esc="badge.label"/>
+                                </span>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="o_dm_dashboard_hero_actions">
+                        <button type="button" class="btn btn-light btn-lg" t-on-click="reloadDashboard">Refresh dashboard</button>
+                    </div>
+                </section>
+
+                <section class="o_dm_dashboard_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <article t-att-class="'o_dm_kpi_card o_dm_tone_' + kpi.tone">
+                            <p class="o_dm_kpi_label" t-esc="kpi.label"/>
+                            <div class="o_dm_kpi_value">
+                                <span t-esc="kpi.value"/>
+                                <span t-if="kpi.suffix" t-esc="kpi.suffix"/>
+                            </div>
+                            <p class="o_dm_kpi_help" t-esc="kpi.help"/>
+                        </article>
+                    </t>
+                </section>
+
+                <section class="o_dm_dashboard_grid">
+                    <article class="o_dm_dashboard_panel o_dm_dashboard_risk_panel">
+                        <div class="o_dm_dashboard_panel_header">
+                            <div>
+                                <p class="o_dm_dashboard_panel_kicker">Trend</p>
+                                <h2>Risk breakdown</h2>
+                            </div>
+                            <p class="o_dm_dashboard_panel_hint">Share of inspections by risk band.</p>
+                        </div>
+                        <div class="o_dm_risk_rows">
+                            <t t-foreach="state.data.risk_distribution" t-as="band" t-key="band.key">
+                                <div t-att-class="'o_dm_risk_row o_dm_tone_' + band.tone">
+                                    <div class="o_dm_risk_row_top">
+                                        <div>
+                                            <strong t-esc="band.label"/>
+                                            <span t-esc="band.count_text"/>
+                                        </div>
+                                        <span t-esc="band.percentage + '%'"/>
+                                    </div>
+                                    <div class="o_dm_progress_track" aria-hidden="true">
+                                        <span t-att-style="'width: ' + band.percentage + '%'"/>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="o_dm_stage_strip">
+                            <t t-foreach="state.data.stage_distribution" t-as="stage" t-key="stage.key">
+                                <span t-att-class="'o_dm_stage_chip o_dm_tone_' + stage.tone">
+                                    <strong t-esc="stage.label"/>
+                                    <span t-esc="stage.count"/>
+                                </span>
+                            </t>
+                        </div>
+                    </article>
+
+                    <article class="o_dm_dashboard_panel o_dm_dashboard_actions_panel">
+                        <div class="o_dm_dashboard_panel_header">
+                            <div>
+                                <p class="o_dm_dashboard_panel_kicker">Action center</p>
+                                <h2>Quick actions</h2>
+                            </div>
+                            <p class="o_dm_dashboard_panel_hint">Jump straight into the workflow.</p>
+                        </div>
+                        <div class="o_dm_quick_action_grid">
+                            <t t-foreach="state.data.quick_actions" t-as="action" t-key="action.key">
+                                <button type="button" t-att-data-action="action.key" t-att-class="'o_dm_quick_action o_dm_tone_' + action.tone" t-on-click="openDashboardAction">
+                                    <span class="o_dm_quick_action_badge" t-esc="action.abbr"/>
+                                    <span class="o_dm_quick_action_copy">
+                                        <strong t-esc="action.label"/>
+                                        <span t-esc="action.description"/>
+                                    </span>
+                                </button>
+                            </t>
+                        </div>
+                        <div class="o_dm_recent_panel">
+                            <div class="o_dm_dashboard_panel_header o_dm_dashboard_panel_header_compact">
+                                <div>
+                                    <p class="o_dm_dashboard_panel_kicker">Recent activity</p>
+                                    <h3>Latest inspections</h3>
+                                </div>
+                            </div>
+                            <t t-if="state.data.recent_inspections.length">
+                                <div class="o_dm_recent_list">
+                                    <t t-foreach="state.data.recent_inspections" t-as="inspection" t-key="inspection.id">
+                                        <article t-att-class="inspection.is_overdue ? 'o_dm_recent_item o_dm_recent_item_overdue' : 'o_dm_recent_item'">
+                                            <div class="o_dm_recent_item_top">
+                                                <div>
+                                                    <strong t-esc="inspection.name"/>
+                                                    <span t-esc="inspection.establishment"/>
+                                                </div>
+                                                <span class="o_dm_recent_grade" t-esc="inspection.grade || '—'"/>
+                                            </div>
+                                            <div class="o_dm_recent_item_meta">
+                                                <span t-esc="inspection.stage"/>
+                                                <span t-esc="inspection.inspection_date"/>
+                                            </div>
+                                            <div class="o_dm_recent_item_stats">
+                                                <span t-esc="inspection.compliance_text"/>
+                                                <span t-esc="inspection.risk_band"/>
+                                                <span t-esc="inspection.risk_score + ' risk'"/>
+                                            </div>
+                                        </article>
+                                    </t>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="o_dm_empty_state">
+                                    <strong>No inspections yet.</strong>
+                                    <span>Create the first inspection to populate the dashboard.</span>
+                                </div>
+                            </t>
+                        </div>
+                    </article>
+                </section>
+            </t>
+        </div>
+    </t>
+</templates>

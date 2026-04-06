@@ -13,7 +13,7 @@ supervisor-gated outcomes, and demo-ready operational views.
     'author': 'Odoo S.A.',
     'website': 'https://www.odoo.com',
     'license': 'LGPL-3',
-    'depends': ['mail'],
+    'depends': ['mail', 'web'],
     'data': [
         'security/dm_food_safety_security.xml',
         'security/ir.model.access.csv',
@@ -25,6 +25,13 @@ supervisor-gated outcomes, and demo-ready operational views.
         'views/dm_food_template_views.xml',
         'views/dm_food_stage_grade_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'dm_food_safety_inspection/static/src/dashboard/dm_food_safety_dashboard.js',
+            'dm_food_safety_inspection/static/src/dashboard/dm_food_safety_dashboard.xml',
+            'dm_food_safety_inspection/static/src/dashboard/dm_food_safety_dashboard.scss',
+        ],
+    },
     'demo': [
         'demo/dm_food_safety_demo.xml',
     ],

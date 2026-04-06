@@ -19,7 +19,7 @@ The goal is simple: an inspector should be able to create an inspection, answer 
 | Checklist templates | Reusable questions that populate new inspections automatically |
 | Scoring | Computes compliance, risk score, risk band, and final grade |
 | Security | Inspector, supervisor, and manager access with company-aware record rules |
-| UX | List, kanban, form, search, and configuration menus |
+| UX | Dashboard, list, kanban, form, search, and configuration menus |
 | Validation | Demo data and automated tests that cover the workflow |
 
 ## How The App Works
@@ -130,20 +130,25 @@ The addon also applies company-aware record rules so records stay scoped to the 
 
 ## Screens In The Addon
 
+- Food Safety Dashboard
 - Food Safety Inspections
+- AI Summary
 - Checklist Templates
 - Workflow Stages
 - Compliance Grades
 
-The main UI is built with Odoo list, kanban, form, and search views. The inspection form includes a status bar, checklist lines, and chatter, while the configuration screens manage reusable templates and grade thresholds.
+The main UI is built with Odoo dashboard, list, kanban, form, and search views. The inspection form includes a status bar, checklist lines, an AI summary tab, and chatter, while the configuration screens manage reusable templates and grade thresholds.
 
 ## What To Try In The UI
 
-1. Open Food Safety -> Food Safety Inspections.
-2. Create a new inspection from the restaurant checklist template.
-3. Fill in the checklist lines.
-4. Click Prepare, Start, and Submit for Review.
-5. Approve or fail the inspection as a supervisor.
+1. Open Food Safety to land on the dashboard.
+2. Review the KPI cards and risk breakdown.
+3. Open Food Safety -> Food Safety Inspections.
+4. Create a new inspection from the restaurant checklist template.
+5. Fill in the checklist lines.
+6. Click Prepare, Start, and Submit for Review.
+7. Generate the AI summary, review it, and apply it to the follow-up note if needed.
+8. Approve or fail the inspection as a supervisor.
 
 ## Local Run Setup
 

@@ -100,11 +100,15 @@ class FoodSafetyInspectionLine(models.Model):
                 else:
                     result = 'pass' if line.actual_boolean == line.expected_boolean else 'fail'
             elif line.check_type == 'numeric':
-                if line.actual_value is False:
+                actual_value_raw = line._cache.get('actual_value')
+                if actual_value_raw is None:
                     result = 'pending'
                 else:
-                    meets_minimum = line.minimum_value is False or line.actual_value >= line.minimum_value
-                    meets_maximum = line.maximum_value is False or line.actual_value <= line.maximum_value
+                    actual_value = line.actual_value
+                    minimum_value = line._cache.get('minimum_value')
+                    maximum_value = line._cache.get('maximum_value')
+                    meets_minimum = minimum_value is None or actual_value >= minimum_value
+                    meets_maximum = maximum_value is None or actual_value <= maximum_value
                     result = 'pass' if meets_minimum and meets_maximum else 'fail'
             else:
                 actual_text = (line.actual_text or '').strip()
