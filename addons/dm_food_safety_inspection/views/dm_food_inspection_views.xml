@@ -39,7 +39,7 @@
             <field name="name">dm.food.inspection.list</field>
             <field name="model">dm.food.inspection</field>
             <field name="arch" type="xml">
-                <list string="Food Safety Inspections" multi_edit="1" default_order="inspection_date desc" sample="1"
+                    <list string="Food Safety Inspections" multi_edit="1" default_order="inspection_date desc"
                       decoration-danger="risk_score &gt;= 70 or critical_fail_count &gt; 0"
                       decoration-warning="risk_score &gt;= 40 and risk_score &lt; 70"
                       decoration-success="stage_id.code == 'passed'"
@@ -66,7 +66,7 @@
             <field name="name">dm.food.inspection.kanban</field>
             <field name="model">dm.food.inspection</field>
             <field name="arch" type="xml">
-                <kanban default_group_by="stage_id" highlight_color="color" sample="1">
+                <kanban default_group_by="stage_id" highlight_color="color">
                     <field name="color"/>
                     <field name="name"/>
                     <field name="inspection_date"/>
